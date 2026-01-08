@@ -12,6 +12,6 @@ endif()
 add_subdirectory(src)
 
 add_executable(PerfNetProxy src/main.cpp
-        src/stub_.cpp)
+)
 
 target_link_libraries(PerfNetProxy PRIVATE PerfNetProxyCore)

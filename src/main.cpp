@@ -1,23 +1,25 @@
 #include <iostream>
 #include <winsock2.h>
 
+#include "completionQueue.hpp"
 #include "socketListener.hpp"
-#include "stub_.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    stub_();
-
     try {
         WSADATA startupData {};
         WSAStartup(MAKEWORD(2, 2), &startupData);
 
+        CompletionQueue completionQueue;
         SocketListener listener{InternetProtocolVersion::IPv4};
         listener.bind("0.0.0.0", 8080);
         listener.listen();
 
+        completionQueue.AddSocketListenerReference(listener);
+
         while (true) {
-            listener.postAccept();
+            listener.acceptClient();
+
+            completionQueue.GetCompletionTask();
         }
 
         listener.close();
