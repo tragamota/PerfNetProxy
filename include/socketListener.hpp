@@ -6,10 +6,9 @@
 #define SOCKET_LISTENER_H
 
 #include <cstdint>
-#include <memory>
-#include <string_view>
+#include <string>
 
-#include "platform/windows/InternalSocket.h"
+#include "InternalSocket.hpp"
 
 enum class InternetProtocolVersion {
     IPv4,
@@ -22,27 +21,35 @@ enum class InternetProtocolFamily {
 };
 
 class SocketListener {
-    std::unique_ptr<InternalSocket> m_InternalSocket;
-    void cleanup() const;
+    InternalListeningSocket m_InternalSocket {};
+    InternetProtocolVersion m_ProtocolVersion;
+
+    void cleanup();
 
 public:
     explicit SocketListener(const InternetProtocolVersion& protocolVersion);
-    ~SocketListener();
+    ~SocketListener() {
+        cleanup();
+    }
 
     SocketListener(const SocketListener&) = delete;
     SocketListener& operator=(const SocketListener&) = delete;
 
-    SocketListener(SocketListener&&) noexcept;
-    SocketListener& operator=(SocketListener&&) noexcept;
-
-    [[nodiscard]] const InternalSocket* getSocket() const {
-        return m_InternalSocket.get();
+    SocketListener(SocketListener&& other) noexcept : m_InternalSocket(other.m_InternalSocket)  {}
+    SocketListener& operator=(SocketListener&& other) noexcept {
+        if (this != &other)
+            m_InternalSocket = other.m_InternalSocket;
+        return *this;
     }
 
-    void bind(const std::string_view& bind_address, uint16_t port) const;
+    [[nodiscard]] const InternalListeningSocket* getInternalSocket() const {
+        return &m_InternalSocket;
+    }
+
+    void bind(const std::string& bind_address, uint16_t port);
     void listen() const;
-    void postAccept() const;
-    void close() const;
+    void acceptClient() const;
+    void close();
 };
 
 #endif // SOCKET_LISTENER_H
