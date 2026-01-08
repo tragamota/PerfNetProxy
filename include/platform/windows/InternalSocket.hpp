@@ -6,10 +6,15 @@
 #define PERFNETPROXY_INTERNALSOCKET_H
 
 #include <winsock2.h>
+#include <mswsock.h>
 
-struct InternalSocket {
+struct InternalListeningSocket {
     SOCKET socket;
-    sockaddr_storage address;
+    LPFN_ACCEPTEX acceptExFunc;
+};
+
+struct InternalClientSocket {
+    SOCKET socket;
 };
 
 #endif //PERFNETPROXY_INTERNALSOCKET_H
