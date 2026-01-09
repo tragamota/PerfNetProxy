@@ -9,12 +9,12 @@
 #include <mswsock.h>
 
 struct InternalListeningSocket {
-    SOCKET socket;
-    LPFN_ACCEPTEX acceptExFunc;
+    SOCKET socket {INVALID_SOCKET};
+    LPFN_ACCEPTEX acceptExFunc {};
 };
 
 struct InternalClientSocket {
-    SOCKET socket;
+    SOCKET socket {INVALID_SOCKET};
 };
 
 #endif //PERFNETPROXY_INTERNALSOCKET_H
