@@ -11,16 +11,14 @@ int main() {
 
         CompletionQueue completionQueue;
         SocketListener listener{InternetProtocolVersion::IPv4};
+
         listener.bind("0.0.0.0", 8080);
         listener.listen();
 
         completionQueue.AddSocketListenerReference(listener);
 
-        while (true) {
-            listener.acceptClient();
-
-            completionQueue.GetCompletionTask();
-        }
+        listener.acceptClient();
+        completionQueue.GetCompletionTask();
 
         listener.close();
 

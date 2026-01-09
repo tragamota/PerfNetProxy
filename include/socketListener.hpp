@@ -21,32 +21,36 @@ enum class InternetProtocolFamily {
 };
 
 class SocketListener {
-    InternalListeningSocket m_InternalSocket {};
+    InternalListeningSocket m_InternalSocket{};
     InternetProtocolVersion m_ProtocolVersion;
 
     void cleanup();
 
 public:
-    explicit SocketListener(const InternetProtocolVersion& protocolVersion);
+    explicit SocketListener(const InternetProtocolVersion &protocolVersion);
+
     ~SocketListener() {
         cleanup();
     }
 
-    SocketListener(const SocketListener&) = delete;
-    SocketListener& operator=(const SocketListener&) = delete;
+    SocketListener(const SocketListener &) = delete;
+    SocketListener &operator=(const SocketListener &) = delete;
 
-    SocketListener(SocketListener&& other) noexcept : m_InternalSocket(other.m_InternalSocket)  {}
-    SocketListener& operator=(SocketListener&& other) noexcept {
+    SocketListener(SocketListener &&other) noexcept : m_InternalSocket(other.m_InternalSocket),
+                                                      m_ProtocolVersion(other.m_ProtocolVersion) {
+    }
+
+    SocketListener &operator=(SocketListener &&other) noexcept {
         if (this != &other)
             m_InternalSocket = other.m_InternalSocket;
         return *this;
     }
 
-    [[nodiscard]] const InternalListeningSocket* getInternalSocket() const {
+    [[nodiscard]] const InternalListeningSocket *getInternalSocket() const {
         return &m_InternalSocket;
     }
 
-    void bind(const std::string& bind_address, uint16_t port);
+    void bind(const std::string &bind_address, uint16_t port);
     void listen() const;
     void acceptClient() const;
     void close();

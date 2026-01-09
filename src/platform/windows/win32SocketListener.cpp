@@ -5,11 +5,12 @@
 #include <socketListener.hpp>
 #include <format>
 #include <iostream>
-#include <ostream>
 #include <stdexcept>
 #include <string>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
+#include "../../../include/platform/windows/ioContext.hpp"
 
 void bindAcceptFunction(InternalListeningSocket &internalSocket) {
     uint32_t bytesReturned = 0;
@@ -17,7 +18,7 @@ void bindAcceptFunction(InternalListeningSocket &internalSocket) {
     constexpr auto AcceptExIDSize = sizeof(AcceptExID);
     constexpr auto AcceptExFuncSize = sizeof(internalSocket.acceptExFunc);
 
-    auto returnValue = WSAIoctl(
+    const auto returnValue = WSAIoctl(
         internalSocket.socket,
         SIO_GET_EXTENSION_FUNCTION_POINTER,
         &AcceptExID, AcceptExIDSize,
@@ -101,29 +102,30 @@ void SocketListener::acceptClient() const {
         WSA_FLAG_OVERLAPPED
     );
 
-    auto *overlapped = new OVERLAPPED {};
-    uint32_t outputBufferSize = 0;
-    uint8_t *outputBuffer = nullptr;
+    auto *acceptContext = new AcceptContext{};
+
+    acceptContext->operation = IOOperation::Accept;
 
     if (m_ProtocolVersion == InternetProtocolVersion::IPv6) {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in6) + 16;
-        outputBufferSize = acceptAddressBufferSize;
+
+        acceptContext->outputBufferSize = acceptAddressBufferSize;
     } else {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in) + 16;
-        outputBufferSize = acceptAddressBufferSize;
 
+        acceptContext->outputBufferSize = acceptAddressBufferSize;
     }
 
-    outputBuffer = new uint8_t[outputBufferSize * 2]{};
+    acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2]{};
 
-    m_InternalSocket.acceptExFunc(m_InternalSocket.socket, clientSocket, outputBuffer, 0, outputBufferSize, outputBufferSize, nullptr,
-                                  overlapped);
-
-    // setsockopt(clientSocket,
-    //            SOL_SOCKET,
-    //            SO_UPDATE_ACCEPT_CONTEXT,
-    //            reinterpret_cast<const char *>(m_InternalSocket.socket),
-    //            sizeof(m_InternalSocket.socket));
+    m_InternalSocket.acceptExFunc(m_InternalSocket.socket,
+        clientSocket,
+        acceptContext->outputBuffer,
+        0,
+        acceptContext->outputBufferSize,
+        acceptContext->outputBufferSize,
+        nullptr,
+        &acceptContext->overlapped);
 }
 
 void SocketListener::close() {
