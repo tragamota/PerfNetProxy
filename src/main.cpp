@@ -17,9 +17,10 @@ int main() {
 
         completionQueue.AddSocketListenerReference(listener);
 
-        listener.acceptClient();
-        completionQueue.GetCompletionTask();
+        auto client = listener.acceptClient();
+        IOContext* task = completionQueue.GetCompletionTask();
 
+        client->disconnect();
         listener.close();
 
         WSACleanup();
