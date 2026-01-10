@@ -10,7 +10,7 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "../../../include/platform/windows/ioContext.hpp"
+#include "ioContext.hpp"
 
 void bindAcceptFunction(InternalListeningSocket &internalSocket) {
     uint32_t bytesReturned = 0;
@@ -90,21 +90,9 @@ void SocketListener::listen() const {
     }
 }
 
-void SocketListener::acceptClient() const {
-    const auto addressFamily = m_ProtocolVersion == InternetProtocolVersion::IPv4 ? AF_INET : AF_INET6;
-
-    auto clientSocket = WSASocketW(
-        addressFamily,
-        SOCK_STREAM,
-        IPPROTO_TCP,
-        nullptr,
-        0,
-        WSA_FLAG_OVERLAPPED
-    );
-
+SocketClient* SocketListener::acceptClient() const {
     auto *acceptContext = new AcceptContext{};
-
-    acceptContext->operation = IOOperation::Accept;
+    const auto clientSocket = new SocketClient{m_ProtocolVersion};
 
     if (m_ProtocolVersion == InternetProtocolVersion::IPv6) {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in6) + 16;
@@ -116,16 +104,19 @@ void SocketListener::acceptClient() const {
         acceptContext->outputBufferSize = acceptAddressBufferSize;
     }
 
-    acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2]{};
+    acceptContext->operation = IOOperation::Accept;
+    acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2] {};
 
     m_InternalSocket.acceptExFunc(m_InternalSocket.socket,
-        clientSocket,
+        clientSocket->getInternalSocket()->socket,
         acceptContext->outputBuffer,
         0,
         acceptContext->outputBufferSize,
         acceptContext->outputBufferSize,
         nullptr,
         &acceptContext->overlapped);
+
+    return clientSocket;
 }
 
 void SocketListener::close() {

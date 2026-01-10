@@ -7,8 +7,9 @@
 
 #include <memory>
 
-#include "platform/windows/ioContext.hpp"
+#include "ioContext.hpp"
 #include "socketListener.hpp"
+#include "socketClient.hpp"
 
 struct InternalCompletionQueue;
 
@@ -25,6 +26,8 @@ public:
      CompletionQueue& operator=(CompletionQueue&& other) noexcept = default;
 
      void AddSocketListenerReference(const SocketListener&) const;
+
+     void AddSocketClientReference(const SocketClient &client) const;
 
      [[nodiscard]] IOContext* GetCompletionTask() const;
 };
