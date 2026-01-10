@@ -8,17 +8,9 @@
 #include <cstdint>
 #include <string>
 
-#include "InternalSocket.hpp"
-
-enum class InternetProtocolVersion {
-    IPv4,
-    IPv6
-};
-
-enum class InternetProtocolFamily {
-    TCP,
-    UDP
-};
+#include "internalSocket.hpp"
+#include "internetProtocolEnums.hpp"
+#include "socketClient.hpp"
 
 class SocketListener {
     InternalListeningSocket m_InternalSocket{};
@@ -52,7 +44,8 @@ public:
 
     void bind(const std::string &bind_address, uint16_t port);
     void listen() const;
-    void acceptClient() const;
+
+    SocketClient* acceptClient() const;
     void close();
 };
 
