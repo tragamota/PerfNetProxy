@@ -23,19 +23,19 @@ struct IOContext {
 };
 
 struct AcceptContext : IOContext {
-    uint8_t *outputBuffer {};
     uint32_t outputBufferSize {};
+    uint8_t *outputBuffer {};
     SocketClient* ClientSocket {};
 };
 
 struct SendContext : IOContext {
+    WSABUF sendBuffer {};
     uint8_t *buffer {};
-    uint32_t bufferSize {};
 };
 
 struct ReceiveContext : IOContext {
+    WSABUF sendBuffer {};
     uint8_t *buffer {};
-    uint32_t bufferSize {};
 };
 
 #endif //PERFNETPROXY_IOCONTEXT_H

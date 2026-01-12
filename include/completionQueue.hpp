@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#include "completionTask.h"
 #include "ioContext.hpp"
 #include "socketListener.hpp"
 #include "socketClient.hpp"
@@ -26,10 +27,11 @@ public:
      CompletionQueue& operator=(CompletionQueue&& other) noexcept = default;
 
      void AddSocketListenerReference(const SocketListener&) const;
-
      void AddSocketClientReference(const SocketClient &client) const;
 
-     [[nodiscard]] IOContext* GetCompletionTask() const;
+     [[nodiscard]] CompletionTask GetCompletionTask() const;
+
+     void close() const;
 };
 
 
