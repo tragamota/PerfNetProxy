@@ -106,6 +106,7 @@ SocketClient* SocketListener::acceptClient() const {
 
     acceptContext->operation = IOOperation::Accept;
     acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2] {};
+    acceptContext->ClientSocket = clientSocket;
 
     m_InternalSocket.acceptExFunc(m_InternalSocket.socket,
         clientSocket->getInternalSocket()->socket,

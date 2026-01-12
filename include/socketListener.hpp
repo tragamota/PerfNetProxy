@@ -45,7 +45,8 @@ public:
     void bind(const std::string &bind_address, uint16_t port);
     void listen() const;
 
-    SocketClient* acceptClient() const;
+    [[nodiscard]] SocketClient* acceptClient() const;
+
     void close();
 };
 
