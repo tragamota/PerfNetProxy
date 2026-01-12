@@ -6,10 +6,9 @@
 #include <ostream>
 #include <span>
 
-#include "socketClient.hpp"
-
 #include <winsock2.h>
 
+#include "socketClient.hpp"
 #include "ioContext.hpp"
 
 SocketClient::SocketClient(const InternetProtocolVersion protocolVersion) {

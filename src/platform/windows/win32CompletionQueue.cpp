@@ -7,7 +7,7 @@
 #include <ostream>
 
 #include "completionQueue.hpp"
-#include "completionTask.h"
+#include "completionTask.hpp"
 #include "socketClient.hpp"
 #include "ioContext.hpp"
 
