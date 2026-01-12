@@ -7,12 +7,13 @@
 #include <ostream>
 
 #include "completionQueue.hpp"
+#include "completionTask.h"
 #include "socketClient.hpp"
 #include "ioContext.hpp"
 
 
 struct InternalCompletionQueue {
-    HANDLE completionPortHandle;
+    HANDLE completionPortHandle = INVALID_HANDLE_VALUE;
 };
 
 CompletionQueue::CompletionQueue() : m_InternalCompletionQueue(std::make_unique<InternalCompletionQueue>()) {
@@ -23,7 +24,9 @@ CompletionQueue::CompletionQueue() : m_InternalCompletionQueue(std::make_unique<
 }
 
 CompletionQueue::~CompletionQueue() {
-    ::CloseHandle(m_InternalCompletionQueue->completionPortHandle);
+    if (m_InternalCompletionQueue->completionPortHandle != INVALID_HANDLE_VALUE) {
+        close();
+    }
 }
 
 void CompletionQueue::AddSocketListenerReference(const SocketListener &listener) const {
@@ -42,10 +45,12 @@ void CompletionQueue::AddSocketClientReference(const SocketClient &client) const
         0);
 }
 
-IOContext *CompletionQueue::GetCompletionTask() const {
-    uint32_t bytesReturned = 0;
+CompletionTask CompletionQueue::GetCompletionTask() const {
+    size_t bytesReturned = 0;
     ULONG_PTR completionKey = 0;
     LPOVERLAPPED overlapped;
+
+    CompletionTask task {};
 
     if (::GetQueuedCompletionStatus(m_InternalCompletionQueue->completionPortHandle,
                                     reinterpret_cast<LPDWORD>(&bytesReturned), &completionKey, &overlapped,
@@ -53,5 +58,20 @@ IOContext *CompletionQueue::GetCompletionTask() const {
         std::cout << "GetQueuedCompletionStatus failed " << WSAGetLastError() << std::endl;
     }
 
-    return reinterpret_cast<IOContext *>(overlapped);
+    task.taskContext = reinterpret_cast<IOContext *>(overlapped);
+    task.bytesTransferred = bytesReturned;
+
+    if (task.taskContext->operation == IOOperation::Accept) {
+        task.source = reinterpret_cast<SocketListener *>(completionKey);
+    }
+    else {
+        task.source = reinterpret_cast<SocketClient *>(completionKey);
+    }
+
+    return task;
 }
+
+void CompletionQueue::close() const {
+    ::CloseHandle(m_InternalCompletionQueue->completionPortHandle);
+}
+
