@@ -5,13 +5,13 @@
 #include <winsock2.h>
 
 #include "completionQueue.hpp"
+#include "platformInitializer.hpp"
 #include "socketListener.hpp"
 
 int main() {
-    try {
-        WSADATA startupData{};
-        WSAStartup(MAKEWORD(2, 2), &startupData);
+    PlatformInitializer platformInitializer {};
 
+    try {
         CompletionQueue completionQueue;
         SocketListener listener{InternetProtocolVersion::IPv4};
 
@@ -90,8 +90,6 @@ int main() {
 
         completionQueue.close();
         listener.close();
-
-        WSACleanup();
     } catch (const std::exception &e) {
         std::cerr << e.what() << std::endl;
     }
