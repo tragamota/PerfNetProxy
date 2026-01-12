@@ -5,10 +5,11 @@
 #ifndef PERFNETPROXY_SOCKETCLIENT_H
 #define PERFNETPROXY_SOCKETCLIENT_H
 
+#include <cstdint>
+#include <span>
+
 #include "internalSocket.hpp"
 #include "internetProtocolEnums.hpp"
-
-#include <cstdint>
 
 class SocketClient {
     InternalClientSocket m_InternalSocket {};
@@ -21,8 +22,8 @@ public:
         return &m_InternalSocket;
     }
 
-    void queueSendTask(uint8_t& message) const;
-
+    void queueSendTask(std::span<const uint8_t> message) const;
+    void queueReceiveTask(size_t receiveBufferSize = 4096) const;
     void disconnect() const;
 };
 
