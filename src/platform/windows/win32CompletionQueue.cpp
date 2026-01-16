@@ -58,14 +58,14 @@ CompletionTask CompletionQueue::GetCompletionTask() const {
         std::cout << "GetQueuedCompletionStatus failed " << WSAGetLastError() << std::endl;
     }
 
-    task.taskContext = reinterpret_cast<IOContext *>(overlapped);
+    task.taskContext = reinterpret_cast<IOBaseContext *>(overlapped);
     task.bytesTransferred = bytesReturned;
 
     if (task.taskContext->operation == IOOperation::Accept) {
-        task.source = reinterpret_cast<SocketListener *>(completionKey);
+        task.initSource = reinterpret_cast<SocketListener *>(completionKey);
     }
     else {
-        task.source = reinterpret_cast<SocketClient *>(completionKey);
+        task.initSource = reinterpret_cast<SocketClient *>(completionKey);
     }
 
     return task;

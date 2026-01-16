@@ -36,36 +36,37 @@ SocketClient::~SocketClient() {
 }
 
 void SocketClient::queueSendTask(const std::span<const uint8_t> message) const {
-    auto* sendContext = new SendContext{};
+    auto sendContext = std::make_unique<SendContext>();
 
-    sendContext->operation = IOOperation::Send;
-    sendContext->buffer = new uint8_t[message.size()];
-
-    std::ranges::copy(message, sendContext->buffer);
-
-    sendContext->sendBuffer.buf = reinterpret_cast<CHAR*>(sendContext->buffer);
+    sendContext->buffer = std::make_unique<uint8_t[]>(message.size());
+    sendContext->sendBuffer.buf = reinterpret_cast<CHAR*>(*sendContext->buffer.get());
     sendContext->sendBuffer.len = message.size();
+
+    std::ranges::copy(message, sendContext->buffer.get());
 
     const auto ret = WSASend(m_InternalSocket.socket,
                        &sendContext->sendBuffer,
                        1,
                        nullptr,
                        0,
-                       &sendContext->overlapped,
+                       &sendContext->baseContext.overlapped,
                        nullptr);
 
-    if (ret == SOCKET_ERROR) {
+    if (ret == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING) {
         std::cout << "WSASend failed " << WSAGetLastError() << std::endl;
+
+        return;
     }
+
+    sendContext.release();
 }
 
 void SocketClient::queueReceiveTask(const size_t receiveBufferSize) const {
-    auto* receiveContext = new ReceiveContext {};
+    auto receiveContext = std::make_unique<ReceiveContext>();
 
-    receiveContext->operation = IOOperation::Receive;
-    receiveContext->buffer = new uint8_t[receiveBufferSize];
+    receiveContext->buffer = std::make_unique<uint8_t[]>(receiveBufferSize);
 
-    receiveContext->sendBuffer.buf = reinterpret_cast<CHAR*>(receiveContext->buffer);
+    receiveContext->sendBuffer.buf = reinterpret_cast<CHAR*>(receiveContext->buffer.get());
     receiveContext->sendBuffer.len = receiveBufferSize;
 
     int flags = 0;
@@ -75,12 +76,16 @@ void SocketClient::queueReceiveTask(const size_t receiveBufferSize) const {
                            1,
                            nullptr,
                            reinterpret_cast<LPDWORD>(&flags),
-                           &receiveContext->overlapped,
+                           &receiveContext->baseContext.overlapped,
                            nullptr);
 
-    if (ret == SOCKET_ERROR) {
+    if (ret == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING) {
         std::cout << "WSARecv failed " << WSAGetLastError() << std::endl;
+
+        return;
     }
+
+    receiveContext.release();
 }
 
 void SocketClient::disconnect() const {

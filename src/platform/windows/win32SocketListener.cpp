@@ -104,7 +104,6 @@ SocketClient* SocketListener::acceptClient() const {
         acceptContext->outputBufferSize = acceptAddressBufferSize;
     }
 
-    acceptContext->operation = IOOperation::Accept;
     acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2] {};
     acceptContext->ClientSocket = clientSocket;
 
@@ -115,7 +114,7 @@ SocketClient* SocketListener::acceptClient() const {
         acceptContext->outputBufferSize,
         acceptContext->outputBufferSize,
         nullptr,
-        &acceptContext->overlapped);
+        &acceptContext->baseContext.overlapped);
 
     return clientSocket;
 }

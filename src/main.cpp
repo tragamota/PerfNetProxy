@@ -33,13 +33,13 @@ int main() {
         }
 
         while (true) {
-            auto task = completionQueue.GetCompletionTask();
+            auto [initSource, bytesTransferred, taskContext] = completionQueue.GetCompletionTask();
 
-            if (task.taskContext->operation == IOOperation::Accept) {
-                const auto *acceptContext = reinterpret_cast<AcceptContext *>(task.taskContext);
+            if (taskContext->operation == IOOperation::Accept) {
+                const auto *acceptContext = reinterpret_cast<AcceptContext *>(taskContext);
 
-                const auto source = std::get<SocketListener *>(task.source);
-                const auto client = acceptContext->ClientSocket;
+                const auto source = std::get<SocketListener *>(initSource);
+                const auto client = acceptContext->client;
 
                 completionQueue.AddSocketClientReference(*client);
 
@@ -61,20 +61,18 @@ int main() {
                 client->queueReceiveTask();
                 listener.acceptClient();
 
-                delete acceptContext->outputBuffer;
                 delete acceptContext;
-            } else if (task.taskContext->operation == IOOperation::Send) {
-                const auto client = std::get<SocketClient *>(task.source);
-                const auto *sendContext = reinterpret_cast<SendContext *>(task.taskContext);
+            } else if (taskContext->operation == IOOperation::Send) {
+                const auto client = std::get<SocketClient *>(initSource);
+                const auto sendContext = std::unique_ptr<SendContext>(reinterpret_cast<SendContext *>(taskContext));
 
-                delete sendContext->buffer;
-                delete sendContext;
+
             }
-            else if (task.taskContext->operation == IOOperation::Receive) {
-                const auto client = std::get<SocketClient *>(task.source);
-                const auto *receiveContext = reinterpret_cast<ReceiveContext *>(task.taskContext);
+            else if (taskContext->operation == IOOperation::Receive) {
+                const auto client = std::get<SocketClient *>(initSource);
+                const auto receiveContext = std::unique_ptr<ReceiveContext>(reinterpret_cast<ReceiveContext *>(taskContext));
 
-                std::string str { reinterpret_cast<char *>(receiveContext->buffer), task.bytesTransferred };
+                std::string str { reinterpret_cast<char *>(receiveContext->buffer.get()), bytesTransferred };
 
                 std::cout << str << std::endl;
 
@@ -82,9 +80,6 @@ int main() {
 
                 client->queueReceiveTask();
                 client->queueSendTask({reinterpret_cast<const uint8_t *>(bytes.data()), bytes.size()});
-
-                delete receiveContext->buffer;
-                delete receiveContext;
             }
         }
 
