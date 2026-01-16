@@ -17,25 +17,28 @@ enum class IOOperation {
     Unknown
 };
 
-struct IOContext {
+struct IOBaseContext {
     OVERLAPPED overlapped {};
     IOOperation operation = IOOperation::Unknown;
 };
 
-struct AcceptContext : IOContext {
-    uint32_t outputBufferSize {};
-    uint8_t *outputBuffer {};
-    SocketClient* ClientSocket {};
+struct AcceptContext {
+    IOBaseContext baseContext { .operation = IOOperation::Accept };
+    uint32_t bufferSize {};
+    std::unique_ptr<uint8_t[]> buffer {};
+    SocketClient* client {};
 };
 
-struct SendContext : IOContext {
+struct SendContext  {
+    IOBaseContext baseContext { .operation = IOOperation::Send};
     WSABUF sendBuffer {};
-    uint8_t *buffer {};
+    std::unique_ptr<uint8_t[]> buffer {};
 };
 
-struct ReceiveContext : IOContext {
+struct ReceiveContext {
+    IOBaseContext baseContext { .operation = IOOperation::Receive };
     WSABUF sendBuffer {};
-    uint8_t *buffer {};
+    std::unique_ptr<uint8_t[]> buffer {};
 };
 
 #endif //PERFNETPROXY_IOCONTEXT_H

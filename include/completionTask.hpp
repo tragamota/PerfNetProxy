@@ -7,14 +7,14 @@
 
 #include <variant>
 
-#include "platform/windows/ioContext.hpp"
+#include "ioContext.hpp"
 #include "socketClient.hpp"
 #include "socketListener.hpp"
 
 struct CompletionTask {
-    std::variant<SocketClient*, SocketListener*> source {};
+    std::variant<SocketClient*, SocketListener*> initSource {};
     size_t bytesTransferred {};
-    IOContext* taskContext {};
+    IOBaseContext* taskContext {};
 };
 
 #endif //PERFNETPROXY_COMPLETIONTASK_H
