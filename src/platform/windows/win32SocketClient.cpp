@@ -39,7 +39,7 @@ void SocketClient::queueSendTask(const std::span<const uint8_t> message) const {
     auto sendContext = std::make_unique<SendContext>();
 
     sendContext->buffer = std::make_unique<uint8_t[]>(message.size());
-    sendContext->sendBuffer.buf = reinterpret_cast<CHAR*>(*sendContext->buffer.get());
+    sendContext->sendBuffer.buf = reinterpret_cast<CHAR*>(sendContext->buffer.get());
     sendContext->sendBuffer.len = message.size();
 
     std::ranges::copy(message, sendContext->buffer.get());
