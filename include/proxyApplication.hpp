@@ -15,14 +15,25 @@ class ProxyApplication {
     PlatformInitializer m_PlatformInitializer {};
     CompletionQueue m_CompletionQueue {};
 
-    std::vector<SocketListener> m_listeners {};
-    std::vector<SocketClient> m_incomingClients {};
-    std::vector<SocketClient> m_clients {};
+    std::vector<SocketListener> m_Listeners {};
+    std::vector<SocketClient> m_IncomingClients {};
+    std::vector<SocketClient> m_ActiveClients {};
+
+    void initializeAcceptConnections();
+
+    void HandleAcceptCompletion(const CompletionTask&);
+    void HandleSendCompletion(CompletionTask&);
+    void HandleReceiveCompletion(CompletionTask&);
+
+    std::atomic<bool> m_IsRunning = false;
 public:
     ProxyApplication();
-    ~ProxyApplication();
+    ~ProxyApplication() = default;
 
-
+    void run();
+    void stop() {
+        m_IsRunning = false;
+    }
 };
 
 

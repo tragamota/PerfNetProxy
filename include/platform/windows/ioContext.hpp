@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <winsock2.h>
+#include <memory>
 
 #include "socketClient.hpp"
 
