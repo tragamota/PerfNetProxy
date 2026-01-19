@@ -61,6 +61,21 @@ SocketListener::SocketListener(const InternetProtocolVersion &protocolVersion) :
     }
 }
 
+SocketListener::SocketListener(SocketListener &&other) noexcept : m_InternalSocket(other.m_InternalSocket),
+                                                                  m_ProtocolVersion(other.m_ProtocolVersion) {
+    other.m_InternalSocket.socket = INVALID_SOCKET;
+}
+
+SocketListener &SocketListener::operator=(SocketListener &&other) noexcept {
+    if (this != &other) {
+        m_InternalSocket = other.m_InternalSocket;
+        m_ProtocolVersion = other.m_ProtocolVersion;
+        other.m_InternalSocket = {};
+    }
+
+    return *this;
+}
+
 void SocketListener::bind(const std::string &bind_address, const uint16_t port) {
     addrinfo hints{};
     addrinfo *conversionResult = nullptr;
@@ -90,31 +105,33 @@ void SocketListener::listen() const {
     }
 }
 
-SocketClient* SocketListener::acceptClient() const {
-    auto *acceptContext = new AcceptContext{};
+SocketClient *SocketListener::acceptClient() const {
+    auto acceptContext = std::make_unique<AcceptContext>();
     const auto clientSocket = new SocketClient{m_ProtocolVersion};
 
     if (m_ProtocolVersion == InternetProtocolVersion::IPv6) {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in6) + 16;
 
-        acceptContext->outputBufferSize = acceptAddressBufferSize;
+        acceptContext->bufferSize = acceptAddressBufferSize;
     } else {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in) + 16;
 
-        acceptContext->outputBufferSize = acceptAddressBufferSize;
+        acceptContext->bufferSize = acceptAddressBufferSize;
     }
 
-    acceptContext->outputBuffer = new uint8_t[acceptContext->outputBufferSize * 2] {};
-    acceptContext->ClientSocket = clientSocket;
+    acceptContext->buffer = std::make_unique<uint8_t[]>(acceptContext->bufferSize * 2);
+    acceptContext->client = clientSocket;
 
     m_InternalSocket.acceptExFunc(m_InternalSocket.socket,
-        clientSocket->getInternalSocket()->socket,
-        acceptContext->outputBuffer,
-        0,
-        acceptContext->outputBufferSize,
-        acceptContext->outputBufferSize,
-        nullptr,
-        &acceptContext->baseContext.overlapped);
+                                  clientSocket->getInternalSocket()->socket,
+                                  acceptContext->buffer.get(),
+                                  0,
+                                  acceptContext->bufferSize,
+                                  acceptContext->bufferSize,
+                                  nullptr,
+                                  &acceptContext->baseContext.overlapped);
+
+    acceptContext.release();
 
     return clientSocket;
 }

@@ -28,15 +28,9 @@ public:
     SocketListener(const SocketListener &) = delete;
     SocketListener &operator=(const SocketListener &) = delete;
 
-    SocketListener(SocketListener &&other) noexcept : m_InternalSocket(other.m_InternalSocket),
-                                                      m_ProtocolVersion(other.m_ProtocolVersion) {
-    }
+    SocketListener(SocketListener &&other) noexcept;
 
-    SocketListener &operator=(SocketListener &&other) noexcept {
-        if (this != &other)
-            m_InternalSocket = other.m_InternalSocket;
-        return *this;
-    }
+    SocketListener &operator=(SocketListener &&other) noexcept;
 
     [[nodiscard]] const InternalListeningSocket *getInternalSocket() const {
         return &m_InternalSocket;
