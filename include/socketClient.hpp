@@ -15,8 +15,10 @@ class SocketClient {
     InternalClientSocket m_InternalSocket {};
 
 public:
-    explicit SocketClient(InternetProtocolVersion protocolVersion);
+    SocketClient() = default;
     ~SocketClient();
+
+    void prepareSocket(InternetProtocolVersion protocolVersion);
 
     [[nodiscard]] const InternalClientSocket *getInternalSocket() const {
         return &m_InternalSocket;
@@ -24,7 +26,7 @@ public:
 
     void queueSendTask(std::span<const uint8_t> message) const;
     void queueReceiveTask(size_t receiveBufferSize = 4096) const;
-    void disconnect() const;
+    void close();
 };
 
 

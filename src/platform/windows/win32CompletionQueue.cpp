@@ -73,5 +73,6 @@ CompletionTask CompletionQueue::GetCompletionTask() const {
 
 void CompletionQueue::close() const {
     ::CloseHandle(m_InternalCompletionQueue->completionPortHandle);
+    m_InternalCompletionQueue->completionPortHandle = INVALID_HANDLE_VALUE;
 }
 

@@ -11,7 +11,11 @@
 #include "socketClient.hpp"
 #include "ioContext.hpp"
 
-SocketClient::SocketClient(const InternetProtocolVersion protocolVersion) {
+SocketClient::~SocketClient() {
+    close();
+}
+
+void SocketClient::prepareSocket(const InternetProtocolVersion protocolVersion) {
     const auto addressFamily = protocolVersion == InternetProtocolVersion::IPv4 ? AF_INET : AF_INET6;
 
     m_InternalSocket.socket = WSASocketW(
@@ -22,17 +26,6 @@ SocketClient::SocketClient(const InternetProtocolVersion protocolVersion) {
         0,
         WSA_FLAG_OVERLAPPED
     );
-}
-
-SocketClient::~SocketClient() {
-    if (m_InternalSocket.socket == INVALID_SOCKET)
-        return;
-
-    if (auto closeRet = ::closesocket(m_InternalSocket.socket); closeRet == SOCKET_ERROR) {
-        std::cout << "Close socket failed " << WSAGetLastError() << std::endl;
-    }
-
-    m_InternalSocket.socket = INVALID_SOCKET;
 }
 
 void SocketClient::queueSendTask(const std::span<const uint8_t> message) const {
@@ -65,7 +58,6 @@ void SocketClient::queueReceiveTask(const size_t receiveBufferSize) const {
     auto receiveContext = std::make_unique<ReceiveContext>();
 
     receiveContext->buffer = std::make_unique<uint8_t[]>(receiveBufferSize);
-
     receiveContext->sendBuffer.buf = reinterpret_cast<CHAR*>(receiveContext->buffer.get());
     receiveContext->sendBuffer.len = receiveBufferSize;
 
@@ -88,11 +80,17 @@ void SocketClient::queueReceiveTask(const size_t receiveBufferSize) const {
     receiveContext.release();
 }
 
-void SocketClient::disconnect() const {
+void SocketClient::close() {
     if (m_InternalSocket.socket == INVALID_SOCKET)
         return;
 
-    if (auto ret = ::shutdown(m_InternalSocket.socket, SD_BOTH); ret == SOCKET_ERROR) {
+    if (::shutdown(m_InternalSocket.socket, SD_BOTH) == SOCKET_ERROR) {
         std::cout << "shutdown failed " << WSAGetLastError() << std::endl;
     }
+
+    if (::closesocket(m_InternalSocket.socket) == SOCKET_ERROR) {
+        std::cout << "Close socket failed " << WSAGetLastError() << std::endl;
+    }
+
+    m_InternalSocket.socket = INVALID_SOCKET;
 }

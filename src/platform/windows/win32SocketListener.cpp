@@ -107,7 +107,9 @@ void SocketListener::listen() const {
 
 SocketClient *SocketListener::acceptClient() const {
     auto acceptContext = std::make_unique<AcceptContext>();
-    const auto clientSocket = new SocketClient{m_ProtocolVersion};
+    const auto clientSocket = new SocketClient {};
+
+    clientSocket->prepareSocket(m_ProtocolVersion);
 
     if (m_ProtocolVersion == InternetProtocolVersion::IPv6) {
         constexpr auto acceptAddressBufferSize = sizeof(sockaddr_in6) + 16;

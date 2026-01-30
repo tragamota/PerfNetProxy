@@ -8,6 +8,7 @@
 #include <ostream>
 
 void ProxyApplication::initializeAcceptConnections() {
+
 }
 
 void ProxyApplication::HandleAcceptCompletion(const CompletionTask &completionContext) {
@@ -47,7 +48,7 @@ void ProxyApplication::HandleSendCompletion(CompletionTask &completionContext) {
     const auto client = std::get<SocketClient *>(completionContext.initSource);
 
     if (completionContext.bytesTransferred == 0) {
-        client->disconnect();
+        client->close();
     }
 }
 
@@ -57,7 +58,7 @@ void ProxyApplication::HandleReceiveCompletion(CompletionTask &completionContext
         reinterpret_cast<ReceiveContext *>(completionContext.taskContext));
 
     if (completionContext.bytesTransferred == 0) {
-        client->disconnect();
+        client->close();
     }
 
     std::cout << receiveContext->buffer.get() << std::endl;
@@ -90,7 +91,7 @@ ProxyApplication::ProxyApplication() {
 void ProxyApplication::run() {
     m_IsRunning = true;
 
-    while (true) {
+    while (m_IsRunning) {
         switch (auto completedTask = m_CompletionQueue.GetCompletionTask(); completedTask.taskContext->operation) {
             case IOOperation::Accept:
                 HandleAcceptCompletion(completedTask);
