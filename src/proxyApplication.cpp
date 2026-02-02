@@ -4,8 +4,11 @@
 
 #include "proxyApplication.hpp"
 
+#include <format>
 #include <iostream>
 #include <ostream>
+
+#include "httpParser.hpp"
 
 void ProxyApplication::initializeAcceptConnections() {
 
@@ -54,14 +57,33 @@ void ProxyApplication::HandleSendCompletion(CompletionTask &completionContext) {
 
 void ProxyApplication::HandleReceiveCompletion(CompletionTask &completionContext) {
     const auto client = std::get<SocketClient *>(completionContext.initSource);
-    const auto receiveContext = std::unique_ptr<ReceiveContext>(
-        reinterpret_cast<ReceiveContext *>(completionContext.taskContext));
+    const auto receiveContext = std::unique_ptr<ReceiveContext>(reinterpret_cast<ReceiveContext *>(completionContext.taskContext));
+
+    HttpParser parser;
 
     if (completionContext.bytesTransferred == 0) {
         client->close();
+        return;
     }
 
     std::cout << receiveContext->buffer.get() << std::endl;
+
+    const auto bufferSpan = std::span<const uint8_t>(receiveContext->buffer.get(), completionContext.bytesTransferred);
+    const auto parseResult = parser.tryParse(bufferSpan);
+
+    if (parseResult == ParseResult::MESSAGE_COMPLETE) {
+        const HttpMessage& message = parser.GetParserMessage();
+
+        std::cout << message.headers.find("host")->second << std::endl;
+    }
+
+    if (parseResult == ParseResult::PARSE_ERROR) {
+        std::cout << std::format("PARSING ERROR: {}", parser.GetErrorMessage()) << std::endl;
+    }
+
+    if (parseResult == ParseResult::NEED_MORE_DATA) {
+        std::cout << "NEED MORE DATA" << std::endl;
+    }
 
     client->queueReceiveTask();
 }
